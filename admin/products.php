@@ -19,7 +19,7 @@ include '../includes/header.php';
 
 <!-- Sidebar -->
 <aside>
-  <div class="logo">🍴 DineClick Admin</div>
+  <div class="logo">🍴 Cheries Admin</div>
   <div class="sidebar-menu">
     <a href="dashboard.php">Dashboard</a>
     <a href="products.php" class="active">Products</a>
@@ -43,7 +43,7 @@ include '../includes/header.php';
     </nav>
   </header>
 
-  <div style="flex: 1; padding: 30px; overflow-y: auto;">
+  <div style="flex:1; padding:30px; overflow-y:auto;">
     <?php if (isset($_SESSION['success'])): ?>
       <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
     <?php endif; ?>
@@ -60,16 +60,16 @@ include '../includes/header.php';
     </div>
     
     <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse;">
+      <table style="width:100%; border-collapse:collapse;">
         <thead>
           <tr style="background: #f8f9fa;">
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Image</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Name</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Category</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Price</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Stock</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Status</th>
-            <th style="padding: 15px; text-align: left; font-weight: 600;">Actions</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Image</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Name</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Category</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Price</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Stock</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Status</th>
+            <th style="padding:12px 15px; text-align:left; font-weight:600;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -89,21 +89,21 @@ include '../includes/header.php';
                      onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNFNUU1RTUiLz48cGF0aCBkPSJNMjAgMjVIMjVWMzBIMjBWMjVaTTM1IDI1SDQwVjMwSDM1VjI1Wk0yMCAzNUg0MFY0MEgyMFYzNVoiIGZpbGw9IiM5OTk5OTkiLz48L3N2Zz4='"
                      style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
               </td>
-              <td style="padding: 15px; font-weight: 600;">
+              <td style="padding:12px 15px; font-weight:600;">
                 <?php echo htmlspecialchars($product['name']); ?>
               </td>
-              <td style="padding: 15px; color: #7D6E6E;">
+              <td style="padding:12px 15px; color:#7D6E6E;">
                 <?php echo htmlspecialchars($product['category_name'] ?? 'N/A'); ?>
               </td>
-              <td style="padding: 15px; font-weight: 600; color: #B76E09;">
+              <td style="padding:12px 15px; font-weight:600; color:#B76E09;">
                 <?php echo format_price($product['price']); ?>
               </td>
-              <td style="padding: 15px;">
+              <td style="padding:12px 15px;">
                 <span style="<?php echo $product['stock'] <= 10 ? 'color: #dc3545; font-weight: 600;' : ''; ?>">
                   <?php echo $product['stock']; ?>
                 </span>
               </td>
-              <td style="padding: 15px;">
+              <td style="padding:12px 15px;">
                 <?php if ($product['is_available']): ?>
                   <span style="padding: 6px 12px; background: #28a745; color: #fff; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">
                     Available
@@ -114,7 +114,7 @@ include '../includes/header.php';
                   </span>
                 <?php endif; ?>
               </td>
-              <td style="padding: 15px;">
+              <td style="padding:12px 15px;">
                 <button class="edit-btn" data-id="<?php echo $product['id']; ?>" 
                         style="padding: 6px 12px; background: #17a2b8; color: #fff; border: none; border-radius: 5px; cursor: pointer; margin-right: 5px; font-size: 0.85rem; font-weight: 600;">
                   Edit
@@ -131,14 +131,13 @@ include '../includes/header.php';
     </div>
   </div>
 
-<?php 
-$categories_json = json_encode($categories);
-$products_json = json_encode($products);
+<?php
+$categories_json = json_encode($categories, JSON_HEX_TAG | JSON_HEX_AMP);
+$products_json   = json_encode($products, JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
-
 <script>
 const categories = <?php echo $categories_json; ?>;
-const products = <?php echo $products_json; ?>;
+const products   = <?php echo $products_json; ?>;
 
 // Add Product
 $('#addProductBtn').click(function() {
@@ -329,7 +328,7 @@ function htmlEscape(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+        .replace(/\'/g, '&#039;');
 }
 </script>
 

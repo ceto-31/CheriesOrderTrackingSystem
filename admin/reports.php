@@ -69,7 +69,7 @@ include '../includes/header.php';
 
 <!-- Sidebar -->
 <aside>
-  <div class="logo">🍴 DineClick Admin</div>
+  <div class="logo">🍴 Cheries Admin</div>
   <div class="sidebar-menu">
     <a href="dashboard.php">Dashboard</a>
     <a href="products.php">Products</a>
@@ -93,7 +93,7 @@ include '../includes/header.php';
     </nav>
   </header>
 
-  <div style="flex: 1; padding: 30px; overflow-y: auto;">
+  <div style="flex:1; padding:30px; overflow-y:auto;">
     <!-- Date Filter -->
     <div style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); margin-bottom: 30px;">
       <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
