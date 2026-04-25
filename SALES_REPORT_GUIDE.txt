@@ -1,0 +1,352 @@
+========================================
+  SALES REPORT - HOW IT WORKS
+========================================
+
+The "Generate Report" button filters sales data by date range.
+
+========================================
+HOW "GENERATE REPORT" WORKS:
+========================================
+
+STEP 1: User Selects Date Range
+--------------------------------
+1. Admin goes to: http://localhost/DineClick/admin/reports.php
+2. Sees two date fields:
+   - Start Date (default: first day of current month)
+   - End Date (default: last day of current month)
+3. Can change dates to any range
+
+STEP 2: User Clicks "Generate Report"
+-------------------------------------
+1. Form submits with GET method
+2. URL becomes: reports.php?start_date=2024-01-01&end_date=2024-01-31
+3. Page reloads with new data
+
+STEP 3: System Queries Database
+-------------------------------
+The page runs 3 main queries:
+
+A. SUMMARY DATA (Lines 13-24)
+   - Total Orders (all orders in date range)
+   - Total Revenue (only Delivered orders)
+   - Cancelled Orders
+   - Average Order Value
+
+B. TOP PRODUCTS (Lines 27-40)
+   - Top 5 best-selling products
+   - Shows units sold
+   - Shows revenue per product
+   - Only counts Delivered orders
+
+C. DAILY SALES CHART (Lines 42-65)
+   - Loops through each day in date range
+   - Gets revenue for each day
+   - Creates array for Chart.js
+   - Shows daily sales bar chart
+
+STEP 4: Display Results
+-----------------------
+1. Summary Cards show totals
+2. Chart shows daily breakdown
+3. Table shows top products
+4. All filtered by selected date range
+
+========================================
+DEFAULT BEHAVIOR:
+========================================
+
+When you first open reports.php:
+- Start Date = First day of current month
+  Example: If today is Oct 30, 2024
+  Start Date = October 1, 2024
+
+- End Date = Last day of current month
+  Example: October 31, 2024
+
+This shows "This Month's Report" by default.
+
+========================================
+HOW TO USE:
+========================================
+
+Example 1: View This Week
+-------------------------
+1. Start Date: October 24, 2024
+2. End Date: October 30, 2024
+3. Click "Generate Report"
+✓ Shows only this week's data
+
+Example 2: View This Month
+--------------------------
+1. Start Date: October 1, 2024
+2. End Date: October 31, 2024
+3. Click "Generate Report"
+✓ Shows entire month's data
+
+Example 3: View Custom Range
+----------------------------
+1. Start Date: September 1, 2024
+2. End Date: October 31, 2024
+3. Click "Generate Report"
+✓ Shows 2 months of data
+
+Example 4: View Single Day
+--------------------------
+1. Start Date: October 15, 2024
+2. End Date: October 15, 2024
+3. Click "Generate Report"
+✓ Shows only that day's data
+
+========================================
+WHAT DATA IS SHOWN:
+========================================
+
+📊 SUMMARY CARDS:
+-----------------
+1. Total Orders
+   - ALL orders (Pending, Preparing, Delivered, Cancelled)
+   - Formula: COUNT(*) from orders table
+
+2. Total Revenue
+   - ONLY Delivered orders counted
+   - Formula: SUM(total_amount) WHERE status = 'Delivered'
+   - Why? Pending/Cancelled orders don't generate revenue
+
+3. Average Order Value
+   - Average of Delivered orders only
+   - Formula: AVG(total_amount) WHERE status = 'Delivered'
+   - Helps track customer spending
+
+4. Cancelled Orders
+   - Number of cancelled orders
+   - Formula: COUNT(*) WHERE status = 'Cancelled'
+
+📈 DAILY SALES CHART:
+--------------------
+- Shows revenue per day
+- X-axis: Dates (Oct 01, Oct 02, etc.)
+- Y-axis: Revenue in Pesos (₱)
+- Bar height = Revenue for that day
+- Hover to see exact amount
+
+🏆 TOP PRODUCTS TABLE:
+---------------------
+- Shows top 5 best-selling products
+- Sorted by units sold (highest first)
+- Shows:
+  * Product name
+  * Units sold
+  * Total revenue from that product
+
+========================================
+TECHNICAL DETAILS:
+========================================
+
+Form Method: GET
+----------------
+<form method="GET">
+  <input name="start_date" />
+  <input name="end_date" />
+  <button type="submit">Generate Report</button>
+</form>
+
+Why GET instead of POST?
+- URLs are bookmarkable
+- Can share report links
+- Browser back button works
+- Can refresh without warning
+
+PHP Code Flow:
+--------------
+1. Get dates from URL or use defaults:
+   $start_date = $_GET['start_date'] ?? date('Y-m-01');
+   $end_date = $_GET['end_date'] ?? date('Y-m-t');
+
+2. Query database with date range:
+   WHERE DATE(created_at) BETWEEN :start_date AND :end_date
+
+3. Display results in HTML
+
+4. Generate JavaScript for chart
+
+SQL Query Example:
+------------------
+SELECT 
+  COUNT(*) as total_orders,
+  SUM(CASE WHEN status = 'Delivered' THEN total_amount ELSE 0 END) as total_revenue
+FROM orders 
+WHERE DATE(created_at) BETWEEN '2024-10-01' AND '2024-10-31'
+
+========================================
+COMMON QUESTIONS:
+========================================
+
+Q: Why is total revenue ₱0.00?
+A: No Delivered orders in that date range.
+   - Check if you have orders in database
+   - Make sure orders are marked as "Delivered"
+   - Try a wider date range
+
+Q: Why do I see "No sales data"?
+A: No products were sold in that period.
+   - Check order_items table
+   - Make sure orders exist
+   - Try "All Time" (very wide date range)
+
+Q: Can I export the report?
+A: Currently no, but you can:
+   - Take a screenshot
+   - Copy data from table
+   - Use browser's Print to PDF
+
+Q: Does it update in real-time?
+A: No, you must click "Generate Report" to refresh.
+   - Each click queries database again
+   - Shows latest data at that moment
+
+Q: What if end_date is before start_date?
+A: You'll get no results (empty report).
+   - Always set start_date before end_date
+   - System doesn't validate this yet
+
+========================================
+DATE FORMAT:
+========================================
+
+Input Format: YYYY-MM-DD
+Example: 2024-10-30
+
+Display Format in Chart: Mon DD
+Example: Oct 30
+
+Database Format: YYYY-MM-DD HH:MM:SS
+Example: 2024-10-30 14:30:45
+
+========================================
+CHART LIBRARY:
+========================================
+
+Uses: Chart.js
+Type: Bar chart
+Data: Daily revenue array
+Colors: 
+- Bar: #B76E09 (brand orange)
+- Border: #B76E09
+
+Features:
+- Responsive (scales to screen)
+- Interactive (hover for details)
+- Animated (bars grow on load)
+- Formatted (₱ symbol, thousands separator)
+
+========================================
+IMPROVEMENTS YOU COULD ADD:
+========================================
+
+1. Export to PDF/Excel
+   - Add export button
+   - Generate PDF with data
+   - Download Excel file
+
+2. Date Range Presets
+   - "Today" button
+   - "This Week" button
+   - "This Month" button
+   - "Last Month" button
+   - "This Year" button
+
+3. More Charts
+   - Pie chart for order status
+   - Line chart for trends
+   - Category breakdown
+
+4. More Metrics
+   - Total customers
+   - Most active customer
+   - Peak hour analysis
+   - Day of week analysis
+
+5. Comparison
+   - Compare with previous period
+   - Year over year
+   - Show growth percentage
+
+6. Real-time Updates
+   - Auto-refresh every minute
+   - Live order notifications
+   - WebSocket updates
+
+========================================
+FILE STRUCTURE:
+========================================
+
+File: admin/reports.php
+Lines 1-66: PHP logic (queries database)
+Lines 67-176: HTML display (cards, chart, table)
+Lines 177-224: JavaScript (Chart.js setup)
+
+Key Variables:
+- $start_date: Beginning of date range
+- $end_date: End of date range
+- $summary: Array with totals
+- $top_products: Array of products
+- $daily_sales: Array for chart data
+- $daily_labels: Array for chart labels
+
+========================================
+QUICK REFERENCE:
+========================================
+
+View This Month:
+- Start: First day of month
+- End: Last day of month
+
+View This Year:
+- Start: January 1, 2024
+- End: December 31, 2024
+
+View All Time:
+- Start: 2000-01-01
+- End: 2099-12-31
+
+View Yesterday:
+- Start: Yesterday's date
+- End: Yesterday's date
+
+========================================
+SUMMARY:
+========================================
+
+"Generate Report" button:
+1. Takes start_date and end_date
+2. Sends GET request to same page
+3. Queries database with date filter
+4. Shows results:
+   - Summary cards (totals)
+   - Daily sales chart
+   - Top products table
+5. All data filtered by selected dates
+
+It's that simple! ✓
+
+========================================
+NEED MORE HELP?
+========================================
+
+Try these examples:
+
+1. View current month:
+   - Leave dates as default
+   - Click "Generate Report"
+
+2. View last 7 days:
+   - Start: 7 days ago
+   - End: Today
+   - Click "Generate Report"
+
+3. View specific week:
+   - Start: Monday of that week
+   - End: Sunday of that week
+   - Click "Generate Report"
+
+The system will query and display the data!
