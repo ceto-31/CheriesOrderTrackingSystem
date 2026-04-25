@@ -42,28 +42,17 @@ $current_step = $step_map[$order['status']] ?? 0;
 
 // Progress milestones
 $milestones = [
-    ['icon' => 'ðŸ“‹', 'label' => 'Order Placed',    'desc' => 'We received your order'],
-    ['icon' => 'âœ…', 'label' => 'Confirmed',        'desc' => 'Order confirmed by kitchen'],
-    ['icon' => 'ðŸ‘¨â€ðŸ³', 'label' => 'Preparing',       'desc' => 'Chef is preparing your meal'],
-    ['icon' => 'ðŸ›µ', 'label' => 'Out for Delivery', 'desc' => 'Rider is on the way'],
-    ['icon' => 'ðŸŽ‰', 'label' => 'Delivered',        'desc' => 'Enjoy your meal!'],
+    ['icon' => '📋', 'label' => 'Order Placed',    'desc' => 'We received your order'],
+    ['icon' => '✅', 'label' => 'Confirmed',        'desc' => 'Order confirmed by kitchen'],
+    ['icon' => '👨‍🍳', 'label' => 'Preparing',       'desc' => 'Chef is preparing your meal'],
+    ['icon' => '🛵', 'label' => 'Out for Delivery', 'desc' => 'Rider is on the way'],
+    ['icon' => '🎉', 'label' => 'Delivered',        'desc' => 'Enjoy your meal!'],
 ];
 
 include 'includes/header.php';
 ?>
 
-<!-- â•â•â• SIDEBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-<aside>
-  <div class="logo">ðŸ´ <?php echo SITE_NAME; ?></div>
-  <div class="sidebar-menu">
-    <a href="cart.php">My Cart</a>
-    <a href="orders.php" class="active">My Orders</a>
-    <a href="order_history.php">Order History</a>
-    <a href="notifications.php">Notifications</a>
-    <a href="profile.php">Profile</a>
-    <a href="logout.php">Logout</a>
-  </div>
-</aside>
+<?php include 'includes/sidebar.php'; ?>
 
 <!-- â•â•â• MAIN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <main>
@@ -92,14 +81,14 @@ include 'includes/header.php';
     <!-- â”€â”€ CANCELLED banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <?php if ($order['status'] === 'Cancelled'): ?>
       <div style="background:#fdecea; padding:20px; border-radius:12px; border-left:4px solid #dc3545; margin-bottom:24px;">
-        <h3 style="margin:0 0 8px; color:#c62828;">âŒ Order Cancelled</h3>
+        <h3 style="margin:0 0 8px; color:#c62828;">❌ Order Cancelled</h3>
         <p style="margin:0; color:#c62828;">This order has been cancelled. Contact support if you need help.</p>
       </div>
 
     <!-- â”€â”€ DELIVERED banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <?php elseif ($order['status'] === 'Delivered'): ?>
       <div style="background:#e8f5e9; padding:20px; border-radius:12px; border-left:4px solid #28a745; margin-bottom:24px;">
-        <h3 style="margin:0 0 8px; color:#1b5e20;">ðŸŽ‰ Order Delivered!</h3>
+        <h3 style="margin:0 0 8px; color:#1b5e20;">🎉 Order Delivered!</h3>
         <p style="margin:0; color:#1b5e20;">
           Delivered on <?php echo date('F d, Y \a\t h:i A', strtotime($order['updated_at'])); ?>.
           Thank you for ordering from <?php echo SITE_NAME; ?>!
@@ -199,7 +188,7 @@ include 'includes/header.php';
           <?php foreach ($order_items as $it): ?>
             <tr style="border-bottom:1px solid #f5f5f5;">
               <td style="padding:10px 14px; font-weight:600;"><?php echo htmlspecialchars($it['product_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-              <td style="padding:10px 14px; text-align:center; color:#7D6E6E;">Ã— <?php echo (int)$it['quantity']; ?></td>
+              <td style="padding:10px 14px; text-align:center; color:#7D6E6E;">× <?php echo (int)$it['quantity']; ?></td>
               <td style="padding:10px 14px; text-align:right; color:#7D6E6E;"><?php echo format_price($it['price']); ?></td>
               <td style="padding:10px 14px; text-align:right; font-weight:600; color:#B76E09;"><?php echo format_price($it['subtotal']); ?></td>
             </tr>
@@ -219,13 +208,13 @@ include 'includes/header.php';
       <a href="order_details.php?id=<?php echo $order_id; ?>"
          style="flex:1; min-width:160px; padding:12px; background:#B76E09; color:#fff; text-align:center;
                 text-decoration:none; border-radius:8px; font-weight:600; font-size:.95rem; transition:background .25s;">
-        ðŸ“„ View Full Details
+        🔄 View Full Details
       </a>
-      <a href="contact.php"
+      <a href="orders.php"
          style="flex:1; min-width:160px; padding:12px; background:#fff; color:#B76E09; text-align:center;
                 text-decoration:none; border-radius:8px; font-weight:600; font-size:.95rem;
                 border:2px solid #B76E09; transition:all .25s;">
-        ðŸ’¬ Contact Support
+        ← Back to My Orders
       </a>
     </div>
 

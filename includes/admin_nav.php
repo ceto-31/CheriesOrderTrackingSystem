@@ -13,12 +13,11 @@ if (!isset($active_nav)) {
 }
 
 $_nav_links = [
-    ['file' => 'dashboard.php',       'label' => 'Dashboard'],
-    ['file' => 'products.php',        'label' => 'Products'],
-    ['file' => 'orders_manage.php',   'label' => 'Orders'],
-    ['file' => 'categories.php',      'label' => 'Categories'],
-    ['file' => 'support_tickets.php', 'label' => 'Tickets'],
-    ['file' => 'reports.php',         'label' => 'Reports'],
+    ['file' => 'dashboard.php',     'label' => 'Dashboard'],
+    ['file' => 'products.php',      'label' => 'Products'],
+    ['file' => 'orders_manage.php', 'label' => 'Orders'],
+    ['file' => 'categories.php',    'label' => 'Categories'],
+    ['file' => 'reports.php',       'label' => 'Reports'],
 ];
 
 $_nav_heading = isset($page_title) ? htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') : 'Admin';
