@@ -52,48 +52,70 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         try {
             $db->beginTransaction();
             
-            // Verify stock availability again
+            // ── Lock product rows before checking stock (prevents race conditions) ──
+            $lock_stmt = $db->prepare(
+                "SELECT id, name, stock FROM products WHERE id = :pid FOR UPDATE"
+            );
+
             foreach ($cart_items as $item) {
-                if ($item['stock'] < $item['quantity']) {
-                    throw new Exception("Insufficient stock for " . $item['name']);
+                $lock_stmt->execute([':pid' => (int)$item['product_id']]);
+                $live = $lock_stmt->fetch();
+                if (!$live || (int)$live['stock'] < (int)$item['quantity']) {
+                    throw new Exception(
+                        "Insufficient stock for \"" . htmlspecialchars($live['name'] ?? $item['name'], ENT_QUOTES, 'UTF-8') . "\". " .
+                        "Available: " . (int)($live['stock'] ?? 0)
+                    );
                 }
             }
-            
-            // Create order
-            $order_query = "INSERT INTO orders (user_id, total_amount, delivery_fee, payment_method, delivery_address, contact_number, notes) 
-                            VALUES (:user_id, :total_amount, :delivery_fee, :payment_method, :delivery_address, :contact_number, :notes)";
-            $order_stmt = $db->prepare($order_query);
-            $order_stmt->bindParam(':user_id', $user_id);
-            $order_stmt->bindParam(':total_amount', $total);
-            $order_stmt->bindParam(':delivery_fee', $delivery_fee);
-            $order_stmt->bindParam(':payment_method', $payment_method);
-            $order_stmt->bindParam(':delivery_address', $delivery_address);
-            $order_stmt->bindParam(':contact_number', $contact_number);
-            $order_stmt->bindParam(':notes', $notes);
-            $order_stmt->execute();
-            
-            $order_id = $db->lastInsertId();
-            
-            // Insert order items and update stock
+
+            // ── Create order ──────────────────────────────────────────
+            $order_stmt = $db->prepare(
+                "INSERT INTO orders (user_id, total_amount, delivery_fee, payment_method,
+                                    delivery_address, contact_number, notes)
+                 VALUES (:user_id, :total_amount, :delivery_fee, :payment_method,
+                         :delivery_address, :contact_number, :notes)"
+            );
+            $order_stmt->execute([
+                ':user_id'          => (int)$user_id,
+                ':total_amount'     => $total,
+                ':delivery_fee'     => $delivery_fee,
+                ':payment_method'   => $payment_method,
+                ':delivery_address' => $delivery_address,
+                ':contact_number'   => $contact_number,
+                ':notes'            => $notes,
+            ]);
+
+            $order_id = (int)$db->lastInsertId();
+
+            // ── Insert order items + deduct stock ─────────────────────
+            $item_ins = $db->prepare(
+                "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, subtotal)
+                 VALUES (:order_id, :product_id, :product_name, :price, :quantity, :subtotal)"
+            );
+            $stock_upd = $db->prepare(
+                "UPDATE products SET stock = stock - :qty WHERE id = :id AND stock >= :qty"
+            );
+
             foreach ($cart_items as $item) {
-                $item_query = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, subtotal) 
-                               VALUES (:order_id, :product_id, :product_name, :price, :quantity, :subtotal)";
-                $item_stmt = $db->prepare($item_query);
-                $item_subtotal = $item['price'] * $item['quantity'];
-                $item_stmt->bindParam(':order_id', $order_id);
-                $item_stmt->bindParam(':product_id', $item['product_id']);
-                $item_stmt->bindParam(':product_name', $item['name']);
-                $item_stmt->bindParam(':price', $item['price']);
-                $item_stmt->bindParam(':quantity', $item['quantity']);
-                $item_stmt->bindParam(':subtotal', $item_subtotal);
-                $item_stmt->execute();
-                
-                // Update stock (real-time stock update)
-                $stock_query = "UPDATE products SET stock = stock - :quantity WHERE id = :id";
-                $stock_stmt = $db->prepare($stock_query);
-                $stock_stmt->bindParam(':quantity', $item['quantity']);
-                $stock_stmt->bindParam(':id', $item['product_id']);
-                $stock_stmt->execute();
+                $subtotal_line = round((float)$item['price'] * (int)$item['quantity'], 2);
+
+                $item_ins->execute([
+                    ':order_id'    => $order_id,
+                    ':product_id'  => (int)$item['product_id'],
+                    ':product_name'=> $item['name'],
+                    ':price'       => (float)$item['price'],
+                    ':quantity'    => (int)$item['quantity'],
+                    ':subtotal'    => $subtotal_line,
+                ]);
+
+                $stock_upd->execute([
+                    ':qty' => (int)$item['quantity'],
+                    ':id'  => (int)$item['product_id'],
+                ]);
+
+                if ($stock_upd->rowCount() === 0) {
+                    throw new Exception('Stock update failed for "' . htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') . '".');
+                }
             }
             
             // Clear cart
@@ -130,7 +152,7 @@ include 'includes/header.php';
 
 <!-- Sidebar -->
 <aside>
-  <div class="logo">🍴 DineClick</div>
+  <div class="logo">🍴 <?php echo SITE_NAME; ?></div>
   <div class="sidebar-menu">
     <a href="cart.php">My Cart</a>
     <a href="orders.php">My Orders</a>

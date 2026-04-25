@@ -2,8 +2,321 @@
 require_once 'includes/session_check.php';
 
 $page_title = "Menu";
-$database = new Database();
-$db = $database->getConnection();
+$database   = new Database();
+$db         = $database->getConnection();
+
+// Categories (for filter pills)
+$categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+
+include 'includes/header.php';
+?>
+
+<!-- ═══════════════════════════════ SIDEBAR ═════════════════════════════ -->
+<aside>
+  <div class="logo">🍴 <?php echo SITE_NAME; ?></div>
+  <div class="sidebar-menu">
+    <a href="cart.php">My Cart</a>
+    <a href="orders.php">My Orders</a>
+    <a href="order_history.php">Order History</a>
+    <a href="notifications.php">Notifications</a>
+    <a href="profile.php">Profile</a>
+    <a href="logout.php">Logout</a>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════ MAIN ════════════════════════════════ -->
+<main>
+  <header>
+    <h3>Our Menu</h3>
+    <nav>
+      <a href="index.php">Home</a>
+      <a href="menu.php" class="active">Menu</a>
+      <a href="orders.php">My Orders</a>
+      <a href="profile.php">Profile</a>
+    </nav>
+  </header>
+
+  <section id="menu-section" style="flex:1; padding:30px; overflow-y:auto;">
+
+    <!-- ── Search + Filter bar ──────────────────────────────────────── -->
+    <div style="margin-bottom:24px;">
+
+      <!-- Search input + sort -->
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+        <div style="position:relative; flex:1; min-width:220px;">
+          <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none;">🔍</span>
+          <input id="searchInput" type="text" placeholder="Search food, drink…"
+                 style="width:100%; padding:10px 14px 10px 38px; border:1px solid #ddd;
+                        border-radius:8px; outline:none; font-size:.95rem; box-sizing:border-box;">
+        </div>
+
+        <select id="sortSelect"
+                style="padding:10px 14px; border:1px solid #ddd; border-radius:8px; outline:none; background:#fff; font-size:.95rem;">
+          <option value="name_asc">Name A–Z</option>
+          <option value="name_desc">Name Z–A</option>
+          <option value="price_asc">Price ↑</option>
+          <option value="price_desc">Price ↓</option>
+        </select>
+
+        <button id="clearFilters"
+                style="padding:10px 18px; background:#7D6E6E; color:#fff; border:none;
+                       border-radius:8px; cursor:pointer; font-weight:600; display:none;">
+          ✕ Clear
+        </button>
+      </div>
+
+      <!-- Category filter pills -->
+      <div id="catPills" style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="cat-pill active" data-cat="0"
+                style="padding:7px 18px; border-radius:20px; border:2px solid #B76E09;
+                       background:#B76E09; color:#fff; cursor:pointer; font-weight:600; font-size:.85rem; transition:all .2s;">
+          All
+        </button>
+        <?php foreach ($categories as $cat): ?>
+          <button class="cat-pill" data-cat="<?php echo (int)$cat['id']; ?>"
+                  style="padding:7px 18px; border-radius:20px; border:2px solid #B76E09;
+                         background:#fff; color:#B76E09; cursor:pointer; font-weight:600; font-size:.85rem; transition:all .2s;">
+            <?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name'], ENT_QUOTES, 'UTF-8'); ?>
+          </button>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <!-- ── Results count ────────────────────────────────────────────── -->
+    <div id="resultsInfo"
+         style="font-size:.85rem; color:#7D6E6E; margin-bottom:18px;">
+      Loading menu…
+    </div>
+
+    <!-- ── Product grid ─────────────────────────────────────────────── -->
+    <div id="menuGrid"
+         style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:22px;">
+      <!-- filled by AJAX -->
+    </div>
+
+    <!-- ── Spinner ──────────────────────────────────────────────────── -->
+    <div id="menuSpinner" style="text-align:center; padding:40px; display:none;">
+      <div style="width:40px; height:40px; border:4px solid #ddd; border-top-color:#B76E09;
+                  border-radius:50%; animation:spin .7s linear infinite; margin:0 auto;"></div>
+    </div>
+
+  </section>
+</main>
+
+<?php
+$additional_js = '
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.menu-card {
+  background:#fff; border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  overflow:hidden; display:flex; flex-direction:column;
+  transition:transform .25s, box-shadow .25s;
+}
+.menu-card:hover { transform:translateY(-5px); box-shadow:0 8px 18px rgba(0,0,0,.13); }
+.menu-card img   { width:100%; height:160px; object-fit:cover; }
+.menu-card-body  { padding:15px; text-align:center; flex:1; display:flex; flex-direction:column; }
+.menu-card-body h4 { margin:0 0 6px; font-size:1.05rem; color:#000; }
+.menu-card-body p  { color:#7D6E6E; font-size:.88rem; margin:0 0 10px; flex:1; }
+.menu-card-price   { font-weight:700; color:#B76E09; font-size:1.05rem; margin-bottom:8px; }
+.menu-card-stock   { font-size:.78rem; margin-bottom:10px; }
+.stock-ok   { color:#28a745; }
+.stock-low  { color:#fd7e14; font-weight:600; }
+.stock-none { color:#dc3545; }
+.btn-add {
+  background:#B76E09; color:#fff; border:none;
+  padding:9px 16px; border-radius:8px; cursor:pointer;
+  font-weight:600; font-size:.9rem; transition:background .25s;
+  width:100%;
+}
+.btn-add:hover:not(:disabled) { background:#a55f06; }
+.btn-add:disabled { background:#ccc; color:#888; cursor:not-allowed; }
+
+.cat-pill.active   { background:#B76E09 !important; color:#fff !important; }
+.cat-pill:hover    { opacity:.85; }
+
+@media(max-width:576px){
+  #menu-section { padding:16px !important; }
+}
+</style>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── State ── */
+  let activeCat  = 0;
+  let searchVal  = "";
+  let sortVal    = "name_asc";
+  let debounceId = null;
+
+  /* ── DOM refs ── */
+  const grid        = document.getElementById("menuGrid");
+  const spinner     = document.getElementById("menuSpinner");
+  const info        = document.getElementById("resultsInfo");
+  const clearBtn    = document.getElementById("clearFilters");
+  const searchInput = document.getElementById("searchInput");
+  const sortSelect  = document.getElementById("sortSelect");
+
+  /* ── Fetch products via AJAX ── */
+  function loadMenu() {
+    spinner.style.display = "block";
+    grid.style.display    = "none";
+    info.textContent      = "";
+
+    $.ajax({
+      url:      "ajax/menu_products.php",
+      method:   "GET",
+      data:     { category: activeCat, search: searchVal, sort: sortVal },
+      dataType: "json",
+      success: function(res) {
+        spinner.style.display = "none";
+        grid.style.display    = "grid";
+
+        if (!res.success) {
+          grid.innerHTML = \'<p style="grid-column:1/-1;text-align:center;color:#dc3545;">\' + (res.message||"Error loading menu.") + \'</p>\';
+          return;
+        }
+
+        const items = res.products;
+        info.textContent = items.length + " item" + (items.length !== 1 ? "s" : "") + " found";
+
+        if (items.length === 0) {
+          grid.innerHTML = \'<div style="grid-column:1/-1;text-align:center;padding:50px;color:#7D6E6E;">\' +
+            \'<p style="font-size:2rem;margin-bottom:12px;">🍽️</p>\' +
+            \'<p style="font-weight:600;">No items match your search.</p>\' +
+            \'<p style="font-size:.9rem;">Try a different keyword or category.</p></div>\';
+          return;
+        }
+
+        grid.innerHTML = items.map(buildCard).join("");
+        /* bind Add-to-Cart after render */
+        grid.querySelectorAll(".btn-add[data-id]").forEach(function(btn){
+          btn.addEventListener("click", addToCart);
+        });
+      },
+      error: function() {
+        spinner.style.display = "none";
+        grid.style.display    = "grid";
+        grid.innerHTML = \'<p style="grid-column:1/-1;text-align:center;color:#dc3545;">Failed to load menu. Please refresh.</p>\';
+      }
+    });
+  }
+
+  /* ── Build a product card HTML ── */
+  function buildCard(p) {
+    const imgSrc = p.image_url || "https://placehold.co/300x200/f5f5f5/B76E09?text=No+Image";
+    let stockClass = "stock-ok", stockLabel = "In Stock (" + p.stock + ")";
+    if (p.stock === 0)      { stockClass = "stock-none"; stockLabel = "Out of Stock"; }
+    else if (p.low_stock)   { stockClass = "stock-low";  stockLabel = "⚠ Low Stock (" + p.stock + ")"; }
+
+    const btnAttrs = p.stock === 0
+      ? \'disabled\' 
+      : \'data-id="\' + p.id + \'" data-name="\' + escHtml(p.name) + \'"\';
+
+    return \`
+      <div class="menu-card">
+        <img src="\${escHtml(imgSrc)}" alt="\${escHtml(p.name)}" loading="lazy">
+        <div class="menu-card-body">
+          <span style="font-size:.75rem;color:#7D6E6E;margin-bottom:4px;">\${escHtml(p.category_name||"")}</span>
+          <h4>\${escHtml(p.name)}</h4>
+          <p>\${escHtml(p.description||"")}</p>
+          <div class="menu-card-price">\${p.price_formatted}</div>
+          <div class="menu-card-stock \${stockClass}">\${stockLabel}</div>
+          <button class="btn-add" \${btnAttrs}>\${p.stock===0?"Out of Stock":"Add to Cart"}</button>
+        </div>
+      </div>
+    \`;
+  }
+
+  /* ── Add to cart handler ── */
+  function addToCart() {
+    const btn     = this;
+    const pid     = btn.dataset.id;
+    const pname   = btn.dataset.name;
+    btn.disabled  = true;
+    btn.textContent = "Adding…";
+
+    $.ajax({
+      url:      "ajax/add_to_cart.php",
+      method:   "POST",
+      data:     { product_id: pid, quantity: 1 },
+      dataType: "json",
+      success: function(r) {
+        btn.disabled    = false;
+        btn.textContent = "Add to Cart";
+        if (r.success) {
+          Swal.fire({ icon:"success", title:"Added!", text: pname + " added to your cart.",
+                      showConfirmButton:false, timer:1400, toast:true, position:"top-end" });
+        } else {
+          Swal.fire({ icon:"error", title:"Oops", text: r.message || "Could not add to cart." });
+        }
+      },
+      error: function() {
+        btn.disabled    = false;
+        btn.textContent = "Add to Cart";
+        Swal.fire({ icon:"error", title:"Error", text:"Network error – please try again." });
+      }
+    });
+  }
+
+  /* ── Category pill click ── */
+  document.querySelectorAll(".cat-pill").forEach(function(pill){
+    pill.addEventListener("click", function(){
+      document.querySelectorAll(".cat-pill").forEach(p => p.classList.remove("active"));
+      this.classList.add("active");
+      activeCat = parseInt(this.dataset.cat, 10);
+      updateClearBtn();
+      loadMenu();
+    });
+  });
+
+  /* ── Search with debounce ── */
+  searchInput.addEventListener("input", function(){
+    clearTimeout(debounceId);
+    searchVal = this.value.trim();
+    updateClearBtn();
+    debounceId = setTimeout(loadMenu, 320);
+  });
+
+  /* ── Sort change ── */
+  sortSelect.addEventListener("change", function(){
+    sortVal = this.value;
+    loadMenu();
+  });
+
+  /* ── Clear button ── */
+  clearBtn.addEventListener("click", function(){
+    searchInput.value = "";
+    searchVal         = "";
+    activeCat         = 0;
+    sortVal           = "name_asc";
+    sortSelect.value  = "name_asc";
+    document.querySelectorAll(".cat-pill").forEach(p => p.classList.remove("active"));
+    document.querySelector(\'.cat-pill[data-cat="0"]\').classList.add("active");
+    updateClearBtn();
+    loadMenu();
+  });
+
+  function updateClearBtn(){
+    clearBtn.style.display = (searchVal !== "" || activeCat !== 0) ? "inline-block" : "none";
+  }
+
+  /* ── XSS helper ── */
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  /* ── Initial load ── */
+  loadMenu();
+})();
+</script>
+';
+include 'includes/footer.php';
+?>
 
 // Get categories
 $cat_query = "SELECT * FROM categories ORDER BY name";
