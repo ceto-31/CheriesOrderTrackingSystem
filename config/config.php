@@ -44,6 +44,11 @@ function is_admin(): bool
     return isset($_SESSION['is_admin']) && (int)$_SESSION['is_admin'] === 1;
 }
 
+function is_cashier(): bool
+{
+    return isset($_SESSION['role']) && (int)$_SESSION['role'] === 2;
+}
+
 // ─── Utility helpers ─────────────────────────────────────────
 
 function redirect(string $url): void

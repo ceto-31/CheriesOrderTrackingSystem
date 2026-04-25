@@ -5,6 +5,8 @@ require_once 'config/config.php';
 if (is_logged_in()) {
     if (is_admin()) {
         redirect(SITE_URL . 'admin/dashboard.php');
+    } elseif (is_cashier()) {
+        redirect(SITE_URL . 'cashier/order_entry.php');
     } else {
         redirect(SITE_URL . 'index.php');
     }
@@ -23,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $database = new Database();
         $db = $database->getConnection();
         
-        $query = "SELECT id, first_name, last_name, email, password, is_admin FROM users WHERE email = :email LIMIT 1";
+        $query = "SELECT id, first_name, last_name, email, password, role, is_admin FROM users WHERE email = :email LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();
@@ -33,10 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             if (password_verify($password, $user['password'])) {
                 // Set session variables
-                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_id']   = $user['id'];
                 $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
-                $_SESSION['user_email'] = $user['email'];
-                $_SESSION['is_admin'] = $user['is_admin'];
+                $_SESSION['user_email']= $user['email'];
+                $_SESSION['role']      = (int)$user['role'];
+                $_SESSION['is_admin']  = $user['is_admin'];
                 
                 // Regenerate session ID for security
                 session_regenerate_id(true);
@@ -44,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Redirect based on role
                 if ($user['is_admin'] == 1) {
                     redirect(SITE_URL . 'admin/dashboard.php');
+                } elseif ((int)$user['role'] === 2) {
+                    redirect(SITE_URL . 'cashier/order_entry.php');
                 } else {
                     redirect(SITE_URL . 'index.php');
                 }
@@ -61,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DineClick Login</title>
+  <title>Cheries — Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
