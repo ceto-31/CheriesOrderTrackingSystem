@@ -91,31 +91,7 @@ $stats = $db->query($stats_query)->fetch();
 include '../includes/header.php';
 ?>
 
-<!-- Sidebar -->
-<aside>
-  <div class="logo">🍴 DineClick Admin</div>
-  <div class="sidebar-menu">
-    <a href="dashboard.php">Dashboard</a>
-    <a href="products.php">Products</a>
-    <a href="orders_manage.php">Manage Orders</a>
-    <a href="categories.php">Categories</a>
-    <a href="support_tickets.php" class="active">Support Tickets</a>
-    <a href="reports.php">Sales Reports</a>
-    <a href="../logout.php">Logout</a>
-  </div>
-</aside>
-
-<!-- Main Content -->
-<main>
-  <header>
-    <h3>Support Tickets</h3>
-    <nav>
-      <a href="dashboard.php">Dashboard</a>
-      <a href="products.php">Products</a>
-      <a href="orders_manage.php">Orders</a>
-      <a href="support_tickets.php" class="active">Support</a>
-    </nav>
-  </header>
+<?php include '../includes/admin_nav.php'; ?>
 
   <div style="padding: 30px; overflow-y: auto;">
     <?php if (isset($_GET['replied'])): ?>

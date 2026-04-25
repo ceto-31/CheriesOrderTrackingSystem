@@ -55,31 +55,7 @@ $status_colors = [
 ];
 ?>
 
-<!-- ═══ SIDEBAR ════════════════════════════════════════════════════════ -->
-<aside>
-  <div class="logo">🍴 Cheries Admin</div>
-  <div class="sidebar-menu">
-    <a href="dashboard.php">Dashboard</a>
-    <a href="products.php">Products</a>
-    <a href="orders_manage.php" class="active">Manage Orders</a>
-    <a href="categories.php">Categories</a>
-    <a href="support_tickets.php">Support Tickets</a>
-    <a href="reports.php">Sales Reports</a>
-    <a href="../logout.php">Logout</a>
-  </div>
-</aside>
-
-<!-- ═══ MAIN ════════════════════════════════════════════════════════════ -->
-<main>
-  <header>
-    <h3>Manage Orders</h3>
-    <nav>
-      <a href="dashboard.php">Dashboard</a>
-      <a href="products.php">Products</a>
-      <a href="orders_manage.php" class="active">Orders</a>
-      <a href="reports.php">Reports</a>
-    </nav>
-  </header>
+<?php include '../includes/admin_nav.php'; ?>
 
   <div style="flex:1; padding:30px; overflow-y:auto;">
 

@@ -19,7 +19,7 @@ if (isset($_SESSION['user_id'])) {
 
 <!-- Sidebar -->
 <aside>
-  <div class="logo">🍴 DineClick</div>
+  <div class="logo">�️ Cheries</div>
   <div class="sidebar-menu">
     <a href="cart.php" <?php echo (basename($_SERVER['PHP_SELF']) == 'cart.php') ? 'class="active"' : ''; ?>>My Cart</a>
     <a href="orders.php" <?php echo (basename($_SERVER['PHP_SELF']) == 'orders.php') ? 'class="active"' : ''; ?>>My Orders</a>

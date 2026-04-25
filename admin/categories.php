@@ -11,31 +11,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll();
 include '../includes/header.php';
 ?>
 
-<!-- Sidebar -->
-<aside>
-  <div class="logo">🍴 DineClick Admin</div>
-  <div class="sidebar-menu">
-    <a href="dashboard.php">Dashboard</a>
-    <a href="products.php">Products</a>
-    <a href="orders_manage.php">Manage Orders</a>
-    <a href="categories.php" class="active">Categories</a>
-    <a href="support_tickets.php">Support Tickets</a>
-    <a href="reports.php">Sales Reports</a>
-    <a href="../logout.php">Logout</a>
-  </div>
-</aside>
-
-<!-- Main Content -->
-<main>
-  <header>
-    <h3>Manage Categories</h3>
-    <nav>
-      <a href="dashboard.php">Dashboard</a>
-      <a href="products.php">Products</a>
-      <a href="categories.php" class="active">Categories</a>
-      <a href="reports.php">Reports</a>
-    </nav>
-  </header>
+<?php include '../includes/admin_nav.php'; ?>
 
   <div style="flex: 1; padding: 30px; overflow-y: auto;">
     <?php if (isset($_SESSION['success'])): ?>
